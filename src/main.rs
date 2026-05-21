@@ -5,8 +5,10 @@ mod commands;
 enum Command {
     Init,
     Add { file: String },
-    Commit,
+    Commit { message: String },
     Checkout { commit_id: String },
+    Log,
+    Status,
 }
 
 impl Command {
@@ -17,9 +19,12 @@ impl Command {
         match args[1].to_lowercase().as_str() {
             "init" if args.len() == 2 => Ok(Command::Init),
             "add" if args.len() == 3 => Ok(Command::Add { file: args[2].clone() }),
-            "commit" if args.len() == 2 => Ok(Command::Commit),
+            "commit" if args.len() >= 3 => Ok(Command::Commit { message: args[2..].join(" ") }),
             "checkout" if args.len() == 3 => Ok(Command::Checkout { commit_id: args[2].clone() }),
-            "init" | "commit" => Err("Command does not accept arguments".to_string()),
+            "log" if args.len() == 2 => Ok(Command::Log),
+            "status" if args.len() == 2 => Ok(Command::Status),
+            "init" | "log" | "status" => Err("Command does not accept arguments".to_string()),
+            "commit" => Err("Command expects a commit message".to_string()),
             "add" | "checkout" => Err("Command expects one argument".to_string()),
             _ => Err("Unknown command!".to_string()),
         }
@@ -30,8 +35,10 @@ fn run(command: &Command) -> Result<(), String> {
     match command {
         Command::Init => commands::init::init(),
         Command::Add { file } => commands::add::add(file),
-        Command::Commit => commands::commit::commit(),
+        Command::Commit { message } => commands::commit::commit(message),
         Command::Checkout { commit_id } => commands::checkout::checkout(commit_id),
+        Command::Log => commands::log::log(),
+        Command::Status => commands::status::status(),
     }
 }
 

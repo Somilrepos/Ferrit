@@ -15,6 +15,7 @@ pub(crate) fn init_at(root: &Path) -> Result<(), String> {
     fs::create_dir(&ferrit_dir).map_err(|e| format!("Failed to create repository: {e}"))?;
     fs::File::create(ferrit_dir.join("HEAD")).map_err(|e| format!("Failed to create HEAD file: {e}"))?;
     fs::File::create(ferrit_dir.join("index")).map_err(|e| format!("Failed to create index file: {e}"))?;
+    fs::File::create(ferrit_dir.join("log")).map_err(|e| format!("Failed to create log file: {e}"))?;
     fs::create_dir(ferrit_dir.join("commits"))
         .map_err(|e| format!("Failed to create commits directory: {e}"))?;
     fs::create_dir(ferrit_dir.join("objects"))
@@ -38,6 +39,7 @@ mod tests {
         assert!(root.join(".ferrit").exists());
         assert!(root.join(".ferrit").join("HEAD").exists());
         assert!(root.join(".ferrit").join("index").exists());
+        assert!(root.join(".ferrit").join("log").exists());
         assert!(root.join(".ferrit").join("commits").exists());
         assert!(root.join(".ferrit").join("objects").exists());
 

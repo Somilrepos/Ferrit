@@ -19,8 +19,9 @@ A Version Control System (VCS) implemented in Rust for tracking changes in proje
 - [X] Create repository metadata directory
 - [X] Track files
 - [X] Store snapshots
-- [ ] Implement commit history
-- [ ] Implement checkout functionality
+- [X] Implement commit history
+- [X] Implement checkout functionality
+- [X] Implement status command
 
 ---
 
@@ -30,8 +31,9 @@ A Version Control System (VCS) implemented in Rust for tracking changes in proje
 ferrit init
 ferrit add <file>
 ferrit status
-ferrit commit
+ferrit commit <message>
 ferrit checkout <commit_id>
+ferrit log
 ```
 
 ## Design Decisions
@@ -62,22 +64,46 @@ All files on initialization are __Untracked__. On ```ferrit add```, a new file b
 
 What metadata are we storing ?
 
-1. Data and time information
-2. snapshot / commits
+1. Current commit information
+2. Staged file information
+3. Content-addressed file objects
+4. Commit metadata
+5. Append-only commit log
 
 ```bash
 .ferrit/
     HEAD
-    Index
+    index
+    log
+    objects/
+        <file_hash>
+        <file_hash>
     commits/
-        commit1/
-        commit2/
-            info.txt
-            files/
-                file1
-                file2
-                ..
-            
+        <commit_id>/
+            index
+            metadata
 ```
 
-HEAD stores the current commit.
+```HEAD``` stores the current commit id. Before the first commit, it is empty.
+
+```index``` stores the staged files for the next commit. Each line stores:
+
+```bash
+<file_path> <file_hash>
+```
+
+```objects/``` stores file contents by hash. When ```ferrit add <file>``` runs, ferrit hashes the file contents, copies the file into ```objects/<file_hash>```, and records the staged file in ```index```.
+
+Each commit directory stores:
+
+1. ```index``` - the files included in that commit, with their object hashes
+2. ```metadata``` - commit id, parent commit, commit time, and commit message
+
+Commit metadata has this shape:
+
+```bash
+commit <commit_id>
+parent <parent_commit_id_or_None>
+time <YYYY-MM-DD HH:MM:SS UTC>
+message <commit_message>
+```
