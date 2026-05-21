@@ -59,7 +59,7 @@ pub(crate) fn add_at(root: &Path, file: &str) -> Result<(), String> {
             } else {
 
                 // copy the new file to the objects directory       
-                let new_file_path = ferrit_dir.join("Objects").join(&hash);
+                let new_file_path = ferrit_dir.join("objects").join(&hash);
                 fs::copy(&file_path, &new_file_path).map_err(|e| format!("Not able to copy the new file to objects directory: {e}"))?;                 
                 
                 file_changed = true; 
@@ -83,7 +83,7 @@ pub(crate) fn add_at(root: &Path, file: &str) -> Result<(), String> {
         fs::write(&index_path, new_index_contents).map_err(|e| format!("Not able to update the index file: {e}"))?;
     } else {
         // means file is not being tracked, so we need to copy the new file to the objects directory
-        let new_file_path = ferrit_dir.join("Objects").join(&hash);
+        let new_file_path = ferrit_dir.join("objects").join(&hash);
         fs::copy(&file_path, &new_file_path).map_err(|e| format!("Not able to copy the new file to objects directory: {e}"))?;          
         index.write_all((result+"\n").as_bytes()).map_err(|e| format!("Not able to update the index file: {e}"))?;         
     }
