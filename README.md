@@ -17,7 +17,7 @@ A Version Control System (VCS) implemented in Rust for tracking changes in proje
 
 - [X] Implement CLI command parser
 - [X] Create repository metadata directory
-- [ ] Track files
+- [X] Track files
 - [ ] Store snapshots
 - [ ] Implement commit history
 - [ ] Implement checkout functionality

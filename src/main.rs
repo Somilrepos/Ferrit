@@ -1,6 +1,7 @@
 use std::env;
 mod commands;
 
+#[derive(Debug, PartialEq)]
 enum Command {
     Init,
     Add { file: String },
@@ -9,16 +10,18 @@ enum Command {
 }
 
 impl Command {
-    fn parse_args(args: &[String]) -> Result<Command, &str>{
+    fn parse_args(args: &[String]) -> Result<Command, String>{
         if args.len() < 2 {
-            return Err("Not enough arguments!");
+            return Err("Not enough arguments!".to_string());
         }
         match args[1].to_lowercase().as_str() {
-            "init" => Ok(Command::Init),
-            "add" => Ok(Command::Add { file: args[2].clone() }),
-            "commit" => Ok(Command::Commit),
-            "checkout" => Ok(Command::Checkout { commit_id: args[2].clone() }),
-            _ => Err("Unknown command!"),
+            "init" if args.len() == 2 => Ok(Command::Init),
+            "add" if args.len() == 3 => Ok(Command::Add { file: args[2].clone() }),
+            "commit" if args.len() == 2 => Ok(Command::Commit),
+            "checkout" if args.len() == 3 => Ok(Command::Checkout { commit_id: args[2].clone() }),
+            "init" | "commit" => Err("Command does not accept arguments".to_string()),
+            "add" | "checkout" => Err("Command expects one argument".to_string()),
+            _ => Err("Unknown command!".to_string()),
         }
     }   
 }

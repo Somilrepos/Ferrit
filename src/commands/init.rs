@@ -5,7 +5,7 @@ pub fn init() -> Result<(), String> {
     init_at(Path::new("."))
 }
 
-fn init_at(root: &Path) -> Result<(), String> {
+pub(crate) fn init_at(root: &Path) -> Result<(), String> {
     let ferrit_dir = root.join(".ferrit");
 
     if ferrit_dir.exists() {
@@ -15,8 +15,10 @@ fn init_at(root: &Path) -> Result<(), String> {
     fs::create_dir(&ferrit_dir).map_err(|e| format!("Failed to create repository: {e}"))?;
     fs::File::create(ferrit_dir.join("HEAD")).map_err(|e| format!("Failed to create HEAD file: {e}"))?;
     fs::File::create(ferrit_dir.join("index")).map_err(|e| format!("Failed to create index file: {e}"))?;
-    fs::create_dir(ferrit_dir.join("commits"))
-        .map_err(|e| format!("Failed to create commits directory: {e}"))?;
+    fs::create_dir(ferrit_dir.join("Commits"))
+        .map_err(|e| format!("Failed to create Commits directory: {e}"))?;
+    fs::create_dir(ferrit_dir.join("Objects"))
+        .map_err(|e| format!("Failed to create Objects directory: {e}"))?;
 
     Ok(())
 }
@@ -36,7 +38,8 @@ mod tests {
         assert!(root.join(".ferrit").exists());
         assert!(root.join(".ferrit").join("HEAD").exists());
         assert!(root.join(".ferrit").join("index").exists());
-        assert!(root.join(".ferrit").join("commits").exists());
+        assert!(root.join(".ferrit").join("Commits").exists());
+        assert!(root.join(".ferrit").join("Objects").exists());
 
         fs::remove_dir_all(root).unwrap();
     }
