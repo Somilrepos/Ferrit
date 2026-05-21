@@ -1,4 +1,5 @@
 use std::env;
+mod commands;
 
 enum Command {
     Init,
@@ -22,10 +23,19 @@ impl Command {
     }   
 }
 
+fn run(command: &Command) -> Result<(), String> {
+    match command {
+        Command::Init => commands::init::init(),
+        Command::Add { file } => commands::add::add(file),
+        Command::Commit => commands::commit::commit(),
+        Command::Checkout { commit_id } => commands::checkout::checkout(commit_id),
+    }
+}
+
 fn main() -> Result<(), String>{
     let args: Vec<String> = env::args().collect();
     let config = Command::parse_args(&args)?;
-    Ok(())
+    run(&config)
 }
 
 #[cfg(test)]
