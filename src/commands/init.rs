@@ -1,6 +1,8 @@
 use std::fs;
 use std::path::Path;
 
+use super::temp_path;
+
 /// Initializes a ferrit repository in the current working directory.
 pub fn init() -> Result<(), String> {
     init_at(Path::new("."))
@@ -17,22 +19,22 @@ pub(crate) fn init_at(root: &Path) -> Result<(), String> {
         return Err("Repository already exists!".to_string());
     }
 
-    let timestamp = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap()
-        .as_nanos();
-    let temp_ferrit_dir = root.join(format!(".ferrit-{timestamp}-{}", std::process::id()));
+    let temp_ferrit_dir = temp_path(root, ".ferrit")?;
 
     fs::create_dir(&temp_ferrit_dir).map_err(|e| format!("Failed to create repository: {e}"))?;
-    fs::File::create(temp_ferrit_dir.join("HEAD")).map_err(|e| format!("Failed to create HEAD file: {e}"))?;
-    fs::File::create(temp_ferrit_dir.join("index")).map_err(|e| format!("Failed to create index file: {e}"))?;
-    fs::File::create(temp_ferrit_dir.join("log")).map_err(|e| format!("Failed to create log file: {e}"))?;
+    fs::File::create(temp_ferrit_dir.join("HEAD"))
+        .map_err(|e| format!("Failed to create HEAD file: {e}"))?;
+    fs::File::create(temp_ferrit_dir.join("index"))
+        .map_err(|e| format!("Failed to create index file: {e}"))?;
+    fs::File::create(temp_ferrit_dir.join("log"))
+        .map_err(|e| format!("Failed to create log file: {e}"))?;
     fs::create_dir(temp_ferrit_dir.join("commits"))
         .map_err(|e| format!("Failed to create commits directory: {e}"))?;
     fs::create_dir(temp_ferrit_dir.join("objects"))
         .map_err(|e| format!("Failed to create objects directory: {e}"))?;
 
-    fs::rename(temp_ferrit_dir, ferrit_dir).map_err(|e| format!("Failed to finalize repository initialization: {e}"))?;
+    fs::rename(temp_ferrit_dir, ferrit_dir)
+        .map_err(|e| format!("Failed to finalize repository initialization: {e}"))?;
 
     Ok(())
 }
@@ -40,7 +42,7 @@ pub(crate) fn init_at(root: &Path) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::time::{SystemTime,UNIX_EPOCH};
+    use std::time::{SystemTime, UNIX_EPOCH};
 
     #[test]
     fn creates_repository_metadata_directory() {
@@ -77,9 +79,7 @@ mod tests {
             .unwrap()
             .as_nanos();
 
-        let root = std::env::temp_dir().join(format!(
-            "ferrit-test-{timestamp}",
-    ));
+        let root = std::env::temp_dir().join(format!("ferrit-test-{timestamp}",));
 
         fs::create_dir_all(&root).unwrap();
         root
