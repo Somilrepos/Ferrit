@@ -3,12 +3,17 @@ use std::collections::{BTreeSet, HashMap};
 use std::fs;
 use std::path::Path;
 
+/// Prints the derived repository status for the current working directory.
 pub fn status() -> Result<(), String> {
     let output = status_at(Path::new("."))?;
     print!("{output}");
     Ok(())
 }
 
+/// Builds status output by comparing committed, staged, and working states.
+///
+/// No status is stored directly. It is derived from the current HEAD commit
+/// index, the staging index, and hashes of files in the working directory.
 pub(crate) fn status_at(root: &Path) -> Result<String, String> {
     let ferrit_path = root.join(".ferrit");
     if !ferrit_path.exists() {
@@ -23,6 +28,7 @@ pub(crate) fn status_at(root: &Path) -> Result<String, String> {
     let mut unstaged_changes = Vec::new();
     let mut untracked_files = Vec::new();
 
+    // Staged changes are differences between HEAD and the staging index.
     let mut staged_paths = BTreeSet::new();
     for path in committed.keys() {
         staged_paths.insert(path.clone());
@@ -41,6 +47,8 @@ pub(crate) fn status_at(root: &Path) -> Result<String, String> {
         }
     }
 
+    // Unstaged changes are differences between the working tree and whichever
+    // version is currently authoritative for that path: staged first, then HEAD.
     for (path, working_hash) in &working {
         if staged.contains_key(path) {
             if staged.get(path) != Some(working_hash) {
@@ -55,6 +63,8 @@ pub(crate) fn status_at(root: &Path) -> Result<String, String> {
         }
     }
 
+    // Deletion support is currently unstaged-only because `add` does not yet
+    // record deletion entries in the index.
     for path in committed.keys() {
         if !working.contains_key(path) {
             unstaged_changes.push(format!("deleted: {path}"));
@@ -96,6 +106,7 @@ pub(crate) fn status_at(root: &Path) -> Result<String, String> {
     Ok(output)
 }
 
+/// Reads the index for the commit currently referenced by HEAD.
 fn read_head_index(root: &Path) -> Result<HashMap<String, String>, String> {
     let ferrit_path = root.join(".ferrit");
     let head = fs::read_to_string(ferrit_path.join("HEAD"))
@@ -109,6 +120,7 @@ fn read_head_index(root: &Path) -> Result<HashMap<String, String>, String> {
     read_index(&ferrit_path.join("commits").join(head).join("index"))
 }
 
+/// Reads an index file into `file path -> object hash` entries.
 fn read_index(index_path: &Path) -> Result<HashMap<String, String>, String> {
     let contents = fs::read_to_string(index_path)
         .map_err(|e| format!("Failed to read index: {e}"))?;
@@ -129,6 +141,7 @@ fn read_index(index_path: &Path) -> Result<HashMap<String, String>, String> {
     Ok(entries)
 }
 
+/// Hashes flat working-directory files, excluding directories such as `.ferrit`.
 fn read_working_files(root: &Path) -> Result<HashMap<String, String>, String> {
     let mut files = HashMap::new();
 

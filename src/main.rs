@@ -12,6 +12,12 @@ enum Command {
 }
 
 impl Command {
+    /// Parses raw CLI arguments into a typed command.
+    ///
+    /// The parser receives the full `env::args()` vector, including the binary
+    /// path at index 0. Once parsed, the rest of the program can work with
+
+    /// command variants instead of raw strings.
     fn parse_args(args: &[String]) -> Result<Command, String>{
         if args.len() < 2 {
             return Err("Not enough arguments!".to_string());
@@ -31,6 +37,8 @@ impl Command {
     }   
 }
 
+/// Dispatches a parsed command to the matching command module.
+/// This function serves as the main entry point for executing commands after they've been parsed.
 fn run(command: &Command) -> Result<(), String> {
     match command {
         Command::Init => commands::init::init(),

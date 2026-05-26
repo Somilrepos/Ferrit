@@ -5,21 +5,24 @@ use std::path::Path;
 use sha1::{Sha1, Digest};
 
 
+/// Stages a file from the current working directory.
 pub fn add(file: &str) -> Result<(), String> {
     add_at(Path::new("."), file)
 }
 
+/// Stores the file contents as an object and records `path hash` in the index.
+///
+/// If the file is already staged with a different hash, the index entry is
+/// replaced so the next commit uses the latest staged contents.
 pub(crate) fn add_at(root: &Path, file: &str) -> Result<(), String> {
     let ferrit_dir = root.join(".ferrit");
     
-    // Check if repository is initialized
     if !ferrit_dir.exists() {
         return Err("Repository not initialized".to_string());
     }
     
     let file_path = root.join(file);
     
-    // check if file exists
     if !file_path.exists() {
         return Err(format!("File {file} does not exist"));
     }
@@ -39,14 +42,12 @@ pub(crate) fn add_at(root: &Path, file: &str) -> Result<(), String> {
     let file_contents: String = fs::read_to_string(&file_path)
         .map_err(|e| format!("Not able to read the file: {e}"))?;
 
-    // compute the hash of the file contents 
     let hash: String = Sha1::digest(file_contents.as_bytes()).iter().map(|b| format!("{b:02x}")).collect();
     let result = file.to_string() + " " + &hash;
     
     let mut file_changed = false;
     let mut change_idx: usize = 0;
 
-    // check if it is already being tracked
     for (idx, line) in index_contents.lines().enumerate() {
         let mut line = line.trim().split_whitespace();
         let filename = line.next().unwrap_or("");
@@ -58,7 +59,6 @@ pub(crate) fn add_at(root: &Path, file: &str) -> Result<(), String> {
                 return Err(format!("File {file} is already being tracked"));
             } else {
 
-                // copy the new file to the objects directory       
                 let new_file_path = ferrit_dir.join("objects").join(&hash);
                 fs::copy(&file_path, &new_file_path).map_err(|e| format!("Not able to copy the new file to objects directory: {e}"))?;                 
                 
@@ -69,7 +69,6 @@ pub(crate) fn add_at(root: &Path, file: &str) -> Result<(), String> {
     }
     
     if file_changed == true{
-        // means file is being tracked but has changed, so we need to update the index file
         let mut new_index_contents = String::new();
         for (idx, line) in index_contents.lines().enumerate() {
             if idx == change_idx as usize {
@@ -82,7 +81,6 @@ pub(crate) fn add_at(root: &Path, file: &str) -> Result<(), String> {
         }
         fs::write(&index_path, new_index_contents).map_err(|e| format!("Not able to update the index file: {e}"))?;
     } else {
-        // means file is not being tracked, so we need to copy the new file to the objects directory
         let new_file_path = ferrit_dir.join("objects").join(&hash);
         fs::copy(&file_path, &new_file_path).map_err(|e| format!("Not able to copy the new file to objects directory: {e}"))?;          
         index.write_all((result+"\n").as_bytes()).map_err(|e| format!("Not able to update the index file: {e}"))?;         

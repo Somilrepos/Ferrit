@@ -4,10 +4,15 @@ use std::io::{Read, Write};
 use std::path::Path;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+/// Creates a commit in the current working directory using the staged index.
 pub fn commit(message: &str) -> Result<(), String> {
     commit_at(Path::new("."), message)
 }
 
+/// Writes a commit snapshot, metadata, and log entry under `root/.ferrit`.
+///
+/// The index is treated as the staging area. Each commit records the previous
+/// `HEAD` as its parent, then clears the index after the commit is stored.
 pub(crate) fn commit_at(root: &Path, message: &str) -> Result<(), String> {
     println!("Committing changes...");
 
@@ -34,6 +39,7 @@ pub(crate) fn commit_at(root: &Path, message: &str) -> Result<(), String> {
 
     let parent_commit = fs::read_to_string(ferrit_path.join("HEAD"))
         .map_err(|e| format!("Failed to read HEAD: {e}"))?;
+    // The first commit has no parent, so store an explicit sentinel.
     let parent_commit = match parent_commit.trim() {
         "" => "None".to_string(),
         commit_id => commit_id.to_string(),
@@ -68,6 +74,7 @@ pub(crate) fn commit_at(root: &Path, message: &str) -> Result<(), String> {
 
 }
 
+/// Appends the commit metadata to the human-readable repository log.
 fn append_log(
     ferrit_path: &Path,
     commit_hash: &str,
@@ -89,6 +96,7 @@ fn append_log(
     Ok(())
 }
 
+/// Formats a Unix timestamp as a UTC wall-clock string without external crates.
 fn format_unix_timestamp(timestamp: u64) -> String {
     let seconds_per_day = 86_400;
     let days = (timestamp / seconds_per_day) as i64;
@@ -101,6 +109,7 @@ fn format_unix_timestamp(timestamp: u64) -> String {
     format!("{year:04}-{month:02}-{day:02} {hour:02}:{minute:02}:{second:02} UTC")
 }
 
+/// Converts days since the Unix epoch to a Gregorian calendar date.
 fn civil_from_days(days_since_unix_epoch: i64) -> (i64, u64, u64) {
     let z = days_since_unix_epoch + 719_468;
     let era = if z >= 0 { z } else { z - 146_096 } / 146_097;

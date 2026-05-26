@@ -2,10 +2,16 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
+/// Restores the current working directory to the given commit.
 pub fn checkout(commit_id: &str) -> Result<(), String> {
     checkout_at(Path::new("."), commit_id)
 }
 
+/// Applies a commit snapshot under `root`.
+///
+/// Checkout compares the current `HEAD` commit with the target commit. Files
+/// present in the current commit but absent from the target are removed, and
+/// every target file is restored from the object store.
 pub(crate) fn checkout_at(root: &Path, commit_id: &str) -> Result<(), String> {
     let ferrit_path = root.join(".ferrit");
     let commit_path = ferrit_path.join("commits").join(commit_id);
@@ -16,6 +22,7 @@ pub(crate) fn checkout_at(root: &Path, commit_id: &str) -> Result<(), String> {
 
     let target_files = read_commit_index(&commit_path)?;
     let current_files = read_current_commit_index(&ferrit_path)?;
+    
 
     for filename in current_files.keys() {
         if !target_files.contains_key(filename) {
@@ -39,9 +46,13 @@ pub(crate) fn checkout_at(root: &Path, commit_id: &str) -> Result<(), String> {
     fs::write(ferrit_path.join("HEAD"), &commit_id)
         .map_err(|e| format!("Failed to update HEAD: {e}"))?;
 
+    
+
     Ok(())
 }
 
+
+/// Reads the index for the commit currently referenced by HEAD.
 fn read_current_commit_index(ferrit_path: &Path) -> Result<HashMap<String, String>, String> {
     let head_path = ferrit_path.join("HEAD");
     let current_commit_id = fs::read_to_string(&head_path)
@@ -56,6 +67,7 @@ fn read_current_commit_index(ferrit_path: &Path) -> Result<HashMap<String, Strin
     read_commit_index(&current_commit_path)
 }
 
+/// Reads a commit index into `file path -> object hash` entries.
 fn read_commit_index(commit_path: &Path) -> Result<HashMap<String, String>, String> {
     let index_path = commit_path.join("index");
     let index_contents = fs::read_to_string(&index_path)

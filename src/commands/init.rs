@@ -1,10 +1,15 @@
 use std::fs;
 use std::path::Path;
 
+/// Initializes a ferrit repository in the current working directory.
 pub fn init() -> Result<(), String> {
     init_at(Path::new("."))
 }
 
+/// Creates the repository metadata layout under `root/.ferrit`.
+///
+/// This helper keeps filesystem tests isolated by allowing tests to pass a
+/// temporary root instead of writing to the real project directory.
 pub(crate) fn init_at(root: &Path) -> Result<(), String> {
     let ferrit_dir = root.join(".ferrit");
 

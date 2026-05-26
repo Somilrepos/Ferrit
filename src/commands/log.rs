@@ -1,12 +1,17 @@
 use std::fs;
 use std::path::Path;
 
+/// Prints the append-only ferrit log for the current working directory.
 pub fn log() -> Result<(), String> {
     let output = log_at(Path::new("."))?;
     print!("{output}");
     Ok(())
 }
 
+/// Returns the repository log contents.
+///
+/// Commit writes already format the entries, so log intentionally does not
+/// inspect commit directories or rebuild history.
 pub(crate) fn log_at(root: &Path) -> Result<String, String> {
     let ferrit_path = root.join(".ferrit");
 
