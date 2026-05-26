@@ -17,14 +17,22 @@ pub(crate) fn init_at(root: &Path) -> Result<(), String> {
         return Err("Repository already exists!".to_string());
     }
 
-    fs::create_dir(&ferrit_dir).map_err(|e| format!("Failed to create repository: {e}"))?;
-    fs::File::create(ferrit_dir.join("HEAD")).map_err(|e| format!("Failed to create HEAD file: {e}"))?;
-    fs::File::create(ferrit_dir.join("index")).map_err(|e| format!("Failed to create index file: {e}"))?;
-    fs::File::create(ferrit_dir.join("log")).map_err(|e| format!("Failed to create log file: {e}"))?;
-    fs::create_dir(ferrit_dir.join("commits"))
+    let timestamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_nanos();
+    let temp_ferrit_dir = root.join(format!(".ferrit-{timestamp}-{}", std::process::id()));
+
+    fs::create_dir(&temp_ferrit_dir).map_err(|e| format!("Failed to create repository: {e}"))?;
+    fs::File::create(temp_ferrit_dir.join("HEAD")).map_err(|e| format!("Failed to create HEAD file: {e}"))?;
+    fs::File::create(temp_ferrit_dir.join("index")).map_err(|e| format!("Failed to create index file: {e}"))?;
+    fs::File::create(temp_ferrit_dir.join("log")).map_err(|e| format!("Failed to create log file: {e}"))?;
+    fs::create_dir(temp_ferrit_dir.join("commits"))
         .map_err(|e| format!("Failed to create commits directory: {e}"))?;
-    fs::create_dir(ferrit_dir.join("objects"))
+    fs::create_dir(temp_ferrit_dir.join("objects"))
         .map_err(|e| format!("Failed to create objects directory: {e}"))?;
+
+    fs::rename(temp_ferrit_dir, ferrit_dir).map_err(|e| format!("Failed to finalize repository initialization: {e}"))?;
 
     Ok(())
 }
